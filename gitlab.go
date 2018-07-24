@@ -337,8 +337,8 @@ type ListOptions struct {
 // NewClient returns a new GitLab API client. If a nil httpClient is
 // provided, http.DefaultClient will be used. To use API methods which require
 // authentication, provide a valid private or personal token.
-func NewClient(httpClient *http.Client, token string) *Client {
-	client := newClient(httpClient)
+func NewClient(httpClient *http.Client, host, token string) *Client {
+	client := newClient(httpClient, host)
 	client.authType = privateToken
 	client.token = token
 	return client
@@ -347,8 +347,8 @@ func NewClient(httpClient *http.Client, token string) *Client {
 // NewBasicAuthClient returns a new GitLab API client. If a nil httpClient is
 // provided, http.DefaultClient will be used. To use API methods which require
 // authentication, provide a valid username and password.
-func NewBasicAuthClient(httpClient *http.Client, endpoint, username, password string) (*Client, error) {
-	client := newClient(httpClient)
+func NewBasicAuthClient(httpClient *http.Client, host, endpoint, username, password string) (*Client, error) {
+	client := newClient(httpClient, host)
 	client.authType = basicAuth
 	client.username = username
 	client.password = password
@@ -381,20 +381,23 @@ func (c *Client) requestOAuthToken(ctx context.Context) error {
 // NewOAuthClient returns a new GitLab API client. If a nil httpClient is
 // provided, http.DefaultClient will be used. To use API methods which require
 // authentication, provide a valid oauth token.
-func NewOAuthClient(httpClient *http.Client, token string) *Client {
-	client := newClient(httpClient)
+func NewOAuthClient(httpClient *http.Client, host, token string) *Client {
+	client := newClient(httpClient, host)
 	client.authType = oAuthToken
 	client.token = token
 	return client
 }
 
-func newClient(httpClient *http.Client) *Client {
+func newClient(httpClient *http.Client, host string) *Client {
 	if httpClient == nil {
 		httpClient = http.DefaultClient
 	}
 
 	c := &Client{client: httpClient, UserAgent: userAgent}
-	if err := c.SetBaseURL(defaultBaseURL); err != nil {
+	if host == "" {
+		host = defaultBaseURL
+	}
+	if err := c.SetBaseURL(host); err != nil {
 		// Should never happen since defaultBaseURL is our constant.
 		panic(err)
 	}
